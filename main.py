@@ -75,6 +75,8 @@ async def deletetask(id:int):
             return 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)    
 
+#checked with SWAGGER UI AND POSTMAN API
+
             
 
         
