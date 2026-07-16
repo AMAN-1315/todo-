@@ -1,112 +1,176 @@
-# Todo API
+# Task API
 
-A minimal RESTful API for managing a todo list. Built with FastAPI and designed to be simple to run and extend.
+A simple in-memory Task/Todo List API built with **FastAPI**. Supports full CRUD (Create, Read, Update, Delete) on tasks, with basic input validation and proper HTTP status codes.
 
-**Features**
-- **Create, read, update, delete** todos
-- Simple JSON API with predictable request/response shapes
-- Lightweight and easy to run with `uvicorn`
+Built as a learning project to practice REST API design principles — status codes, validation, and resource-based routing.
 
-**Tech stack**
-- Python 3.10+
-- FastAPI
-- Uvicorn (ASGI server)
+---
 
-**Quick Start**
+## Features
 
-1. Create a virtual environment and install dependencies (if you have a `requirements.txt`):
+- List all tasks
+- Get a single task by ID
+- Create a new task (with validation)
+- Update an existing task's title/done status
+- Delete a task
+- Health check endpoint
+- In-memory storage (no database required — great for learning/testing)
 
+---
+
+## Tech Stack
+
+- **Python 3.10+**
+- **FastAPI** — web framework
+- **Pydantic** — request/response validation
+- **Uvicorn** — ASGI server
+
+---
+
+## Getting Started
+
+### 1. Install dependencies
+
+```bash
+pip install fastapi uvicorn
 ```
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
 
-2. Run the API with Uvicorn (development mode):
+### 2. Run the server
 
-```
+```bash
 uvicorn main:app --reload
 ```
 
-The API will be available at `http://127.0.0.1:8000` and automatic docs at `http://127.0.0.1:8000/docs`.
+The API will be available at `http://localhost:8000` (FastAPI's default port) — adjust the URL below if you're running it elsewhere (e.g. `--port 3000`).
 
-**API Endpoints**
+### 3. Explore the API
 
-- `GET /todos` — List all todos
-- `GET /todos/{id}` — Get a todo by ID
-- `POST /todos` — Create a new todo
-- `PUT /todos/{id}` — Replace an existing todo
-- `PATCH /todos/{id}` — Partially update a todo
-- `DELETE /todos/{id}` — Delete a todo
+FastAPI automatically generates interactive docs:
 
-All request and response bodies are JSON.
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
-**Data model**
+---
 
-Example todo object:
+## API Endpoints
+
+| Method | Endpoint | Description | Success Status |
+|--------|----------|-------------|-----------------|
+| GET | `/` | API info | 200 |
+| GET | `/Health` | Health check | 200 |
+| GET | `/tasks` | List all tasks | 200 |
+| GET | `/tasks/{id}` | Get a single task by ID | 200 |
+| POST | `/tasks` | Create a new task | 201 |
+| PUT | `/tasks/{id}` | Update a task by ID | 200 |
+| DELETE | `/tasks/{id}` | Delete a task by ID | 204 |
+
+---
+
+## Task Object
 
 ```json
 {
   "id": 1,
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "completed": false,
-  "created_at": "2026-07-16T12:00:00Z",
-  "updated_at": "2026-07-16T12:00:00Z"
+  "title": "Buy milk",
+  "done": false
 }
 ```
 
-**Examples**
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | integer | Assigned by the server, read-only |
+| `title` | string | Required, cannot be empty |
+| `done` | boolean | Defaults to `false` |
 
-Create a todo:
+---
+
+## Examples
+
+### List all tasks
 
 ```bash
-curl -X POST http://127.0.0.1:8000/todos \
+curl http://localhost:8000/tasks
+```
+
+### Get a task by ID
+
+```bash
+curl http://localhost:8000/tasks/1
+```
+
+Returns `404` if the ID doesn't exist.
+
+### Create a task
+
+```bash
+curl -i -X POST http://localhost:8000/tasks \
   -H "Content-Type: application/json" \
-  -d '{"title": "Buy groceries", "description": "Milk, eggs"}'
+  -d '{"title": "Buy milk"}'
 ```
 
-List todos:
+Returns `201` with the created task (server assigns the `id`, sets `done` to `false`).
+
+Posting an empty or missing title:
 
 ```bash
-curl http://127.0.0.1:8000/todos
-```
-
-Update a todo:
-
-```bash
-curl -X PUT http://127.0.0.1:8000/todos/1 \
+curl -i -X POST http://localhost:8000/tasks \
   -H "Content-Type: application/json" \
-  -d '{"title": "Buy groceries and snacks", "description": "Milk, eggs, chips", "completed": false}'
+  -d '{}'
 ```
 
-Delete a todo:
+Returns `400 Bad Request`.
+
+### Update a task
 
 ```bash
-curl -X DELETE http://127.0.0.1:8000/todos/1
+curl -i -X PUT http://localhost:8000/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Buy rasgulla and milk", "done": true}'
 ```
 
-**Configuration**
+Returns `200` with the updated task, `404` if the task doesn't exist, `400` if the title is empty.
 
-- By default the app binds to `127.0.0.1:8000`. To change host/port, pass `--host` and `--port` to `uvicorn` or use your preferred deployment configuration.
+### Delete a task
 
-**Testing**
-
-If you have tests (pytest), run:
-
-```
-pytest
+```bash
+curl -i -X DELETE http://localhost:8000/tasks/1
 ```
 
-**Extending**
+Returns `204 No Content` on success, `404` if the task doesn't exist.
 
-- Add authentication (JWT, OAuth) for private lists
-- Persist todos to a database (SQLite, PostgreSQL) via SQLModel/SQLAlchemy
-- Add filtering, sorting, and paging to `GET /todos`
+---
 
-**Files**
-- The application entrypoint is `main.py`.
+## Validation Rules
 
-**License**
+- `title` is required and cannot be empty — the server never trusts the client. Missing or blank titles return `400 Bad Request`.
+- `id` is always assigned by the server, never accepted from the client.
+- Requests for a non-existent task ID return `404 Not Found`.
 
-This project is provided as-is. Add a LICENSE file if you need an explicit license.
+---
+
+## Project Structure
+
+```
+.
+├── main.py       # All routes and logic
+└── README.md
+```
+
+---
+
+## Known Limitations / Notes
+
+- **In-memory storage:** tasks reset every time the server restarts — no database is used.
+- **IDs:** currently generated with `random.randrange`, which works for a demo but doesn't guarantee no collisions at scale. A production version should derive the next ID from the existing list (e.g. `max(existing ids) + 1`) or use a database's auto-increment/UUID.
+- **No authentication:** the API is fully open; anyone can create, update, or delete tasks.
+- **No persistence across restarts.**
+
+---
+
+## Possible Future Improvements
+
+- Swap in-memory list for a real database (SQLite/Postgres via SQLAlchemy)
+- Add pagination and filtering (e.g. `?done=true`) to `GET /tasks`
+- Add authentication (API keys or OAuth2)
+- Add automated tests (pytest + FastAPI's TestClient)
+- Add PATCH endpoint for partial updates
