@@ -4,15 +4,16 @@ from pydantic import BaseModel
 from fastapi import status
 from fastapi import HTTPException
 from fastapi import Response
+from random import randrange
+from typing import Optional
 
 
 
 app = FastAPI()
 
 class Tasks(BaseModel):
-    id : int
-    title: str
-    done : bool
+    title: str | None = None
+    done : bool=False
 
 
 my_tasks = [
@@ -42,8 +43,13 @@ async def gettask(id:int,response:Response):
             return {"task_details":work}
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"task with id: {id} was not found")    
 
-
-    
-
-
-
+@app.post("/tasks",status_code=status.HTTP_201_CREATED)
+async def createtask(task:Tasks):
+    task_dict=task.model_dump()
+    if (("title" in task_dict and task_dict['title'] is not None) and task_dict["title"] is not ""):
+        task_dict['id']=randrange(4,10)
+        my_tasks.append(task_dict) 
+        return task_dict
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        
