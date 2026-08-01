@@ -97,31 +97,46 @@ async def createtask(task:Tasks):
 
         conn.commit()
         conn.close()
-
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         
 @app.put("/tasks/{id}")
 async def updatetask(id:int,task:Tasks):
-    taskdict = task.model_dump()
-    if (("title" in taskdict and taskdict['title'] is not None) and taskdict["title"] != ""):
-        for work in my_tasks:
-            if (work['id']==id):
-                work['title']=taskdict['title']
-                if "done" in taskdict:
-                    work['done']=taskdict['done']
-                return work
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    task_dict = task.model_dump()
+    conn= get_connection()
+    cursor=conn.cursor()
+    if (("title" in task_dict and task_dict['title'] is not None) and task_dict["title"] != ""):
+        cursor.execute("UPDATE tasks SET title = ?, done = ? WHERE id = ?",
+            (task_dict["title"], task_dict["done"], id)
+        )
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            conn.close()
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+        cursor.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+        updated_row = cursor.fetchone()
+        conn.close()
+
+        return dict(updated_row)
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     
 @app.delete("/tasks/{id}",status_code=status.HTTP_204_NO_CONTENT)
 async def deletetask(id:int):
-    for idx,work in enumerate(my_tasks):
-        if work['id']==id:
-            my_tasks.pop(idx)
-            return 
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)    
+    conn=get_connection()
+    cursor=conn.cursor()
+    cursor.execute("DELETE FROM tasks WHERE id = ?", (id,))
+    conn.commit()
+
+    deleted_count = cursor.rowcount
+    conn.close()
+
+    if deleted_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    return
 
 #checked with SWAGGER UI AND POSTMAN API
 
