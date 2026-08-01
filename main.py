@@ -76,30 +76,30 @@ async def task():
 
     return {"data":task_dict}
 
-# @app.get("/tasks/{id}")
-# async def gettask(id:int,response:Response):
-#     for work in my_tasks:
-#         if work['id']==id:
-#             return {"task_details":work}
-#     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"task with id: {id} was not found")    
+@app.get("/tasks/{id}")
+async def gettask(id:int,response:Response):
+    for work in my_tasks:
+        if work['id']==id:
+            return {"task_details":work}
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"task with id: {id} was not found")    
 
-# @app.post("/tasks",status_code=status.HTTP_201_CREATED)
-# async def createtask(task:Tasks):
-#     task_dict=task.model_dump()
-#     if (("title" in task_dict and task_dict['title'] is not None) and task_dict["title"] != ""):
-#         task_dict['id']=randrange(4,100000000000)
-#         # my_tasks.append(task_dict) 
+@app.post("/tasks",status_code=status.HTTP_201_CREATED)
+async def createtask(task:Tasks):
+    task_dict=task.model_dump()
+    if (("title" in task_dict and task_dict['title'] is not None) and task_dict["title"] != ""):
+        task_dict['id']=randrange(4,100000000000)
+        # my_tasks.append(task_dict) 
 
-#         conn = get_connection()
-#         cursor=conn.cursor()
-#         cursor.execute("INSERT INTO tasks (id, title, done) VALUES (?, ?, ?)",
-#                        (task_dict["id"], task_dict["title"], task_dict["done"]))
+        conn = get_connection()
+        cursor=conn.cursor()
+        cursor.execute("INSERT INTO tasks (id, title, done) VALUES (?, ?, ?)",
+                       (task_dict["id"], task_dict["title"], task_dict["done"]))
 
-#         conn.commit()
-#         conn.close()
+        conn.commit()
+        conn.close()
 
-#     else:
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         
 @app.put("/tasks/{id}")
 async def updatetask(id:int,task:Tasks):
