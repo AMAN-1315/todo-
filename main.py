@@ -21,7 +21,7 @@ def init_DB():
     cursor = conn.cursor()
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXIST tasks(
+    CREATE TABLE IF NOT EXISTS tasks(
         id INTEGER PRIMARY KEY,
         title TEXT NOT NULL,
         done BOOLEAN NOT NULL DEFAULT 0
@@ -44,11 +44,11 @@ class Tasks(BaseModel):
     done : bool=False
 
 
-my_tasks = [
-    {"id":1, "title": "Buy rasgulla", "done": False},
-    {"id":2, "title": "Call Srinjoni", "done": False},
-    {"id":3, "title": "build api", "done": False},
-]
+# my_tasks = [
+#     {"id":1, "title": "Buy rasgulla", "done": False},
+#     {"id":2, "title": "Call Srinjoni", "done": False},
+#     {"id":3, "title": "build api", "done": False},
+# ]
 
 
 
@@ -62,24 +62,44 @@ async def statusof ():
 
 @app.get("/tasks")
 async def task():
-    return {"data":my_tasks}
+    conn=get_connection()
+    cursor=conn.cursor()
 
-@app.get("/tasks/{id}")
-async def gettask(id:int,response:Response):
-    for work in my_tasks:
-        if work['id']==id:
-            return {"task_details":work}
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"task with id: {id} was not found")    
+    cursor.execute("SELECT * FROM tasks")
+    data = cursor.fetchall()
+    task_dict = [dict(row) for row in data]    
+    conn.close()
 
-@app.post("/tasks",status_code=status.HTTP_201_CREATED)
-async def createtask(task:Tasks):
-    task_dict=task.model_dump()
-    if (("title" in task_dict and task_dict['title'] is not None) and task_dict["title"] is not ""):
-        task_dict['id']=randrange(4,100000000000)
-        my_tasks.append(task_dict) 
-        return task_dict
-    else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    if task_dict is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Task not found")
+
+
+    return {"data":task_dict}
+
+# @app.get("/tasks/{id}")
+# async def gettask(id:int,response:Response):
+#     for work in my_tasks:
+#         if work['id']==id:
+#             return {"task_details":work}
+#     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"task with id: {id} was not found")    
+
+# @app.post("/tasks",status_code=status.HTTP_201_CREATED)
+# async def createtask(task:Tasks):
+#     task_dict=task.model_dump()
+#     if (("title" in task_dict and task_dict['title'] is not None) and task_dict["title"] != ""):
+#         task_dict['id']=randrange(4,100000000000)
+#         # my_tasks.append(task_dict) 
+
+#         conn = get_connection()
+#         cursor=conn.cursor()
+#         cursor.execute("INSERT INTO tasks (id, title, done) VALUES (?, ?, ?)",
+#                        (task_dict["id"], task_dict["title"], task_dict["done"]))
+
+#         conn.commit()
+#         conn.close()
+
+#     else:
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         
 @app.put("/tasks/{id}")
 async def updatetask(id:int,task:Tasks):
