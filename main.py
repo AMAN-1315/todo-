@@ -7,9 +7,37 @@ from fastapi import Response
 from random import randrange
 from typing import Optional
 
+import sqlite3
+
+DB_NAME="tasks.db"
+
+def get_connection():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory=sqlite3.Row
+    return conn
+
+def init_DB():
+    conn= get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXIST tasks(
+        id INTEGER PRIMARY KEY,
+        title TEXT NOT NULL,
+        done BOOLEAN NOT NULL DEFAULT 0
+    )
+    """)
+
+    conn.commit()
+    conn.close() 
+
 
 
 app = FastAPI()
+
+init_DB()
+
+
 
 class Tasks(BaseModel):
     title: str | None = None
